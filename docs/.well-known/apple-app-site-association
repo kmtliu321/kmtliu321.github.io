@@ -1,0 +1,15 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["JW64A39596.Npust.V-Power"],
+        "components": [
+          {
+            "/": "/pair*",
+            "comment": "Bike pairing stickers"
+          }
+        ]
+      }
+    ]
+  }
+}
