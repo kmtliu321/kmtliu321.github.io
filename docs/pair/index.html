@@ -8,20 +8,30 @@
   :root { color-scheme: dark; }
   body { margin:0; min-height:100vh; display:grid; place-items:center;
          background:linear-gradient(160deg,#0A0A1A,#050508); color:#fff;
-         font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; }
+         font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,
+              "Noto Sans TC",sans-serif; }
   .card { width:min(92vw,420px); padding:32px 28px; text-align:center; }
   h1 { margin:0; font-size:34px; font-weight:900; letter-spacing:8px; }
   .sub { color:#F2362E; font-weight:800; font-size:13px; letter-spacing:1.5px; }
   .sub span { color:#9a9a9a; font-weight:500; letter-spacing:0; }
-  dl { margin:28px 0; border:1px solid #2E2E2E; border-radius:12px;
+  dl { margin:24px 0; border:1px solid #2E2E2E; border-radius:12px;
        background:#171717; padding:4px 18px; text-align:left; }
   dt { color:#8c8c8c; font-size:12px; margin-top:14px; }
   dd { margin:2px 0 14px; font-size:17px; font-weight:600;
        font-variant-numeric:tabular-nums; color:#00BFFF; word-break:break-all; }
   p { color:#9a9a9a; font-size:14px; }
-  .hint { border-top:1px solid #2E2E2E; padding-top:20px; margin-top:24px; }
+  .btn { display:block; margin:14px 0 0; padding:15px 20px; border-radius:14px;
+         background:linear-gradient(90deg,#D1171F,#F2362E); color:#fff;
+         font-size:16px; font-weight:700; text-decoration:none; }
+  .btn.ghost { background:none; border:1px solid #333; color:#bbb;
+               font-size:14px; font-weight:500; padding:13px 20px; }
+  .hint { border-top:1px solid #2E2E2E; padding-top:18px; margin-top:24px; }
   code { background:#171717; border:1px solid #2E2E2E; border-radius:6px;
          padding:2px 6px; font-size:13px; color:#ccc; }
+  .spin { display:inline-block; width:14px; height:14px; margin-right:8px;
+          border:2px solid #444; border-top-color:#F2362E; border-radius:50%;
+          vertical-align:-2px; animation:spin .8s linear infinite; }
+  @keyframes spin { to { transform:rotate(360deg); } }
 </style>
 </head>
 <body>
@@ -34,26 +44,130 @@
     <dt>車台識別名稱</dt><dd id="id">—</dd>
   </dl>
 
-  <p id="msg">若已安裝 V Power，這個連結會直接開啟 App 並自動連線這台車。</p>
+  <p id="msg"><span class="spin"></span>正在開啟 V Power…</p>
+
+  <div id="actions" hidden>
+    <a class="btn" id="install" href="#">安裝 V Power</a>
+    <a class="btn" id="installIos" href="#" hidden>從 App Store 安裝</a>
+    <a class="btn ghost" id="open" href="#">已經安裝了，直接開啟</a>
+  </div>
 
   <div class="hint">
-    <p>看到這個網頁，代表這支手機還沒安裝 V Power，或尚未完成連結驗證。<br>
-       安裝後再掃一次這張 QR Code 即可。</p>
+    <p>裝好之後請<strong>再掃一次這張 QR Code</strong>，才會自動連上這台車。</p>
     <p>也可以在 App 裡手動選擇名稱為 <code id="ble2">—</code> 的裝置。</p>
   </div>
 </div>
 <script>
-  // Shows what the sticker encodes, so a failed hand-off is still diagnosable.
+(function () {
+  "use strict";
+
+  var PACKAGE = "com.vortec.vpower";
+  var PLAY = "https://play.google.com/store/apps/details?id=" + PACKAGE;
+
+  // id-only form on purpose: it redirects to the viewer's own storefront, so
+  // one link serves the Taiwanese and the English listings alike.
+  var APP_STORE = "https://apps.apple.com/app/id6811548475";
+
   var q = new URLSearchParams(location.search);
-  var ble = q.get("ble"), id = q.get("id") || ble;
-  if (ble) {
-    document.getElementById("ble").textContent = ble;
-    document.getElementById("ble2").textContent = ble;
-    document.getElementById("id").textContent = id;
-  } else {
-    document.getElementById("msg").textContent =
-      "這個連結沒有帶車台資訊（缺少 ble 參數）。";
+  var ble = q.get("ble");
+  var id = q.get("id") || ble;
+
+  var msg = document.getElementById("msg");
+  var actions = document.getElementById("actions");
+
+  function show(text) {
+    msg.textContent = text;
+    actions.hidden = false;
   }
+
+  if (!ble) {
+    // A bare visit, or a sticker printed without the bike on it. Nothing to
+    // hand off, so do not bounce anyone to the store.
+    msg.textContent = "這個連結沒有帶車台資訊（缺少 ble 參數）。";
+    document.getElementById("install").href = PLAY;
+    document.getElementById("install").textContent = "從 Google Play 安裝";
+    var noBleIos = document.getElementById("installIos");
+    noBleIos.href = APP_STORE;
+    noBleIos.hidden = false;
+    document.getElementById("open").hidden = true;
+    actions.hidden = false;
+    return;
+  }
+
+  document.getElementById("ble").textContent = ble;
+  document.getElementById("ble2").textContent = ble;
+  document.getElementById("id").textContent = id;
+
+  var query = "ble=" + encodeURIComponent(ble) + "&id=" + encodeURIComponent(id);
+  var scheme = "vpower://pair?" + query;
+
+  // The install link carries the bike along. Nothing reads it yet — that needs
+  // the Play Install Referrer library in the app — but it costs nothing now and
+  // is the only chance to keep the sticker's data across an install.
+  var play = PLAY + "&referrer=" + encodeURIComponent(query);
+
+  document.getElementById("install").href = play;
+  document.getElementById("open").href = scheme;
+
+  var ua = navigator.userAgent || "";
+  var isAndroid = /Android/i.test(ua);
+  var isIOS = /iPhone|iPad|iPod/i.test(ua) ||
+              (/Macintosh/.test(ua) && navigator.maxTouchPoints > 1);
+
+  if (!isAndroid && !isIOS) {
+    var ios = document.getElementById("installIos");
+    ios.href = APP_STORE;
+    ios.hidden = false;
+    document.getElementById("install").textContent = "從 Google Play 安裝";
+    document.getElementById("open").hidden = true;
+    show("用手機掃描這張 QR Code，即可自動設定車台。");
+    return;
+  }
+
+  if (isIOS) {
+    // Universal Links already open the app when it is installed, so arriving
+    // here means it is not — with one exception: a rider who once tapped the
+    // "open in Safari" breadcrumb turns Universal Links off for this domain,
+    // and only the manual button below gets them back.
+    //
+    // No vpower:// attempt first: on iOS an unhandled scheme throws up a
+    // "cannot open page" alert, which is worse than a store page that is
+    // almost always the right destination anyway.
+    show("正在前往 App Store…");
+    location.replace(APP_STORE);
+    return;
+  }
+
+  // Android. The custom scheme is deliberately tried before anything else:
+  // this page is only ever reached when the App Link did NOT open the app,
+  // which includes the case where the app IS installed but the domain is not
+  // verified. Sending those phones straight to the store would be wrong.
+  //
+  // intent:// lets Chrome resolve by package and fall back on its own when
+  // nothing handles it, which is more reliable than racing a timer.
+  var intent = "intent://pair?" + query +
+    "#Intent;scheme=vpower;package=" + PACKAGE +
+    ";S.browser_fallback_url=" + encodeURIComponent(play) + ";end";
+
+  var left = false;
+  function onHidden() { if (document.visibilityState === "hidden") left = true; }
+  document.addEventListener("visibilitychange", onHidden);
+  window.addEventListener("pagehide", function () { left = true; });
+
+  location.replace(intent);
+
+  // Browsers that ignore intent:// — Firefox, and some in-app webviews — stay
+  // right here. Give the app a moment to take over, then offer the store
+  // rather than leaving a spinner running forever.
+  setTimeout(function () {
+    if (left) return;
+    location.replace(scheme);
+    setTimeout(function () {
+      if (left) return;
+      show("找不到已安裝的 V Power。");
+    }, 1200);
+  }, 1500);
+})();
 </script>
 </body>
 </html>
