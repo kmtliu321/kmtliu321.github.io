@@ -1,11 +1,16 @@
 [
   {
-    "relation": ["delegate_permission/common.handle_all_urls"],
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
     "target": {
       "namespace": "android_app",
       "package_name": "com.vortec.vpower",
       "sha256_cert_fingerprints": [
-        "D0:67:74:75:52:93:2A:DA:F9:99:13:25:58:E9:3C:E2:94:B5:99:D3:9C:09:96:CC:0D:CA:BB:83:9A:7B:15:F6"
+        "D0:67:74:75:52:93:2A:DA:F9:99:13:25:58:E9:3C:E2:94:B5:99:D3:9C:09:96:CC:0D:CA:BB:83:9A:7B:15:F6",
+        "35:D0:5B:2D:E8:8B:58:81:4A:CA:5C:98:74:DA:30:3A:62:CA:7F:2E:91:A2:AD:12:6B:52:62:54:6F:A0:D2:74",
+        "40:FA:86:60:E4:13:65:07:26:47:0F:D8:42:6D:31:93:95:79:3B:20:36:5E:93:C7:E2:22:D0:22:5E:28:C6:E7",
+        "51:40:82:D1:57:4B:4E:AA:01:A8:6A:B8:75:C1:6C:71:40:E9:C8:C3:B8:D8:1E:25:AC:67:79:7D:FB:BA:AD:25"
       ]
     }
   }
